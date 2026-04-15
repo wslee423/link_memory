@@ -1,6 +1,5 @@
 export interface Link {
   id: string
-  userId: string
   url: string
   title: string
   thumbnailUrl: string | null

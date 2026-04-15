@@ -60,6 +60,15 @@ export async function PATCH(
 
   // 태그 수정 (전체 교체)
   if (tagIds !== undefined) {
+    // 소유권 확인 (memo/isArchived 수정 없이 tagIds만 올 경우를 위해)
+    const { data: owned } = await supabase
+      .from('links')
+      .select('id')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!owned) return NextResponse.json({ error: '링크를 찾을 수 없습니다.' }, { status: 404 })
+
     // 기존 태그 삭제
     await supabase.from('link_tags').delete().eq('link_id', id)
 

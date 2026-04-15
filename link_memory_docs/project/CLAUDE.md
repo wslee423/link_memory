@@ -11,7 +11,7 @@ URL 저장 → AI 자동 요약 → 태그/메모 관리.
 See @docs/PRODUCT_SENSE.md
 
 ## Tech Stack
-- **Frontend**: Next.js 14 (App Router) + TypeScript (strict) + Tailwind CSS
+- **Frontend**: Next.js 16 (App Router) + TypeScript (strict) + Tailwind CSS
 - **Backend**: Supabase (PostgreSQL + Auth + RLS)
 - **AI**: OpenAI gpt-4o-mini (Claude API 사용 금지)
 - **Deploy**: Vercel
@@ -33,7 +33,8 @@ npm run lint       # ESLint
 - `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY` 는 서버 전용 (NEXT_PUBLIC_ 금지)
 - `transcript` 컬럼은 DB 저장만, API 응답에 포함 금지
 - AI 요약 표시는 스켈레톤 방식 (스트리밍 금지)
-- 링크 삭제 API는 구현하되 MVP에서 UI 미노출
+- 링크 삭제 UI 포함 (확인 단계 필수)
+- 보관(Archive) 기능 포함
 
 ### Must NOT Do
 - Claude API 사용 금지 → OpenAI gpt-4o-mini 사용

@@ -59,7 +59,7 @@ export default function Home() {
     return () => clearInterval(id)
   }, [links, fetchLinks])
 
-  async function handleSave(url: string) {
+  async function handleSave(url: string): Promise<boolean> {
     const res = await fetch('/api/links', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -70,14 +70,15 @@ export default function Home() {
     if (res.status === 409) {
       show('이미 저장된 링크입니다.', 'error')
       setSelectedId(data.linkId)
-      return
+      return true  // 중복이어도 URL은 초기화
     }
     if (!res.ok) {
       show(data.error ?? '저장에 실패했습니다.', 'error')
-      return
+      return false  // 실패 시 URL 유지
     }
     await fetchLinks()
     setSelectedId(data.link.id)
+    return true
   }
 
   async function handleMemoSave(linkId: string, memo: string) {

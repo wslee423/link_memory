@@ -32,19 +32,21 @@
   /api/links/[id]/route.ts
   /api/links/[id]/summarize/route.ts
   /api/tags/route.ts
+  /api/tags/[id]/route.ts
   /login/page.tsx
+  /save/page.tsx
   /page.tsx
   /layout.tsx
-  middleware.ts
+  proxy.ts                  ← Next.js 16 (구 middleware.ts)
 
 /components
-  /ui/Button.tsx, Badge.tsx, Input.tsx, Skeleton.tsx, Toast.tsx
-  /features/links/LinkCard.tsx, LinkList.tsx, UrlInputBar.tsx
-  /features/tags/TagBar.tsx, TagBadge.tsx, TagInput.tsx
+  /ui/Skeleton.tsx, Toast.tsx
+  /features/links/LinkCard.tsx, UrlInputBar.tsx, SearchBar.tsx
+  /features/tags/TagBar.tsx, TagInput.tsx
   /features/detail/DetailPanel.tsx, AiSummary.tsx, MemoEditor.tsx
 
 /lib/supabase/client.ts, server.ts
-/lib/openai/client.ts, summarize.ts
+/lib/openai/summarize.ts
 /lib/youtube/metadata.ts, transcript.ts
 
 /types/index.ts
@@ -57,7 +59,6 @@
 ```typescript
 export interface Link {
   id: string
-  userId: string
   url: string
   title: string
   thumbnailUrl: string | null
@@ -68,6 +69,7 @@ export interface Link {
   memo: string
   tags: Tag[]
   createdAt: string
+  isArchived: boolean
 }
 export interface AiSummary {
   summary: string[]
@@ -78,15 +80,19 @@ export interface Tag {
   id: string
   name: string
 }
+export interface UpdateTagRequest {
+  name: string
+}
 ```
 
 ## 핵심 코드 패턴
 
 ### API Route 인증 (모든 Route에 적용)
 ```typescript
-const supabase = createRouteHandlerClient({ cookies })
-const { data: { session } } = await supabase.auth.getSession()
-if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+// @supabase/ssr 사용 (createRouteHandlerClient 구 패턴 사용 금지)
+const supabase = await createClient()
+const { data: { user } } = await supabase.auth.getUser()
+if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 ```
 
 ### 메모 자동저장 훅

@@ -1,3 +1,6 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { SkeletonSummary } from '@/components/ui/Skeleton'
 import type { AiSummary as AiSummaryType } from '@/types'
 
@@ -7,10 +10,35 @@ interface AiSummaryProps {
   onRetry: (id: string) => void
 }
 
+// 45초 동안 null이면 생성 실패로 간주 (OpenAI 30초 타임아웃 + 여유)
+const FAILURE_TIMEOUT_MS = 45_000
+
 export function AiSummary({ summary, linkId, onRetry }: AiSummaryProps) {
-  // null = 생성 중 또는 실패. 스켈레톤 표시 후 5초 폴링으로 자동 갱신.
-  // 60초 이상 null이면 재시도 버튼은 LinkCard 상단에서 별도 접근 가능.
-  if (!summary) return <SkeletonSummary />
+  const [timedOut, setTimedOut] = useState(false)
+
+  useEffect(() => {
+    setTimedOut(false)
+    if (summary) return
+    const t = setTimeout(() => setTimedOut(true), FAILURE_TIMEOUT_MS)
+    return () => clearTimeout(t)
+  }, [summary, linkId])
+
+  if (!summary) {
+    if (timedOut) {
+      return (
+        <div className="space-y-2">
+          <p className="text-zinc-500 text-sm">요약을 생성하지 못했습니다.</p>
+          <button
+            onClick={() => { setTimedOut(false); onRetry(linkId) }}
+            className="text-indigo-400 hover:text-indigo-300 text-xs transition-colors"
+          >
+            요약 다시 생성
+          </button>
+        </div>
+      )
+    }
+    return <SkeletonSummary />
+  }
 
   return (
     <div className="fade-in space-y-4">
@@ -36,7 +64,6 @@ export function AiSummary({ summary, linkId, onRetry }: AiSummaryProps) {
           </ul>
         </div>
       )}
-      {/* 재시도 버튼 (요약 완료 후에도 수동 재실행 가능) */}
       <button
         onClick={() => onRetry(linkId)}
         className="text-zinc-600 hover:text-indigo-400 text-xs transition-colors"

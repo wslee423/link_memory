@@ -3,7 +3,8 @@
 import { useState } from 'react'
 
 interface UrlInputBarProps {
-  onSave: (url: string) => Promise<void>
+  // true = 저장 성공/중복 → URL 초기화, false = 실패 → URL 유지
+  onSave: (url: string) => Promise<boolean>
 }
 
 export function UrlInputBar({ onSave }: UrlInputBarProps) {
@@ -18,8 +19,8 @@ export function UrlInputBar({ onSave }: UrlInputBarProps) {
     e.preventDefault()
     if (!isValidUrl(url)) return
     setLoading(true)
-    await onSave(url)
-    setUrl('')
+    const clear = await onSave(url)
+    if (clear) setUrl('')
     setLoading(false)
   }
 

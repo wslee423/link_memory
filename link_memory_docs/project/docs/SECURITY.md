@@ -1,14 +1,16 @@
 # SECURITY.md
 
 ## 인증
-- Supabase Auth (이메일/소셜)
-- 미로그인: /login 리다이렉트 (middleware.ts)
+- Supabase Auth (이메일/비밀번호)
+- 미로그인: /login 리다이렉트 (proxy.ts)
 
 ```typescript
-// middleware.ts 패턴
-const { data: { session } } = await supabase.auth.getSession()
-if (!session && req.nextUrl.pathname !== '/login') {
-  return NextResponse.redirect(new URL('/login', req.url))
+// proxy.ts 패턴 (@supabase/ssr)
+const { data: { user } } = await supabase.auth.getUser()
+if (!user && !request.nextUrl.pathname.startsWith('/login')) {
+  const url = request.nextUrl.clone()
+  url.pathname = '/login'
+  return NextResponse.redirect(url)
 }
 ```
 
