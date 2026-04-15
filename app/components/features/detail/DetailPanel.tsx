@@ -119,6 +119,7 @@ export function DetailPanel({
             summary={link.aiSummary}
             summaryError={link.aiSummaryError}
             linkId={link.id}
+            createdAt={link.createdAt}
             onRetry={onSummaryRetry}
           />
         </div>

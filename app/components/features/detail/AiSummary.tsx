@@ -1,15 +1,43 @@
+'use client'
+
+import { useEffect, useState } from 'react'
 import { SkeletonSummary } from '@/components/ui/Skeleton'
 import type { AiSummary as AiSummaryType } from '@/types'
 
 interface AiSummaryProps {
   summary: AiSummaryType | null
-  summaryError: string | null
+  summaryError: string | null  // DB에 저장된 명시적 에러
   linkId: string
+  createdAt: string            // fire-and-forget 실패 감지용 fallback
   onRetry: (id: string) => void
 }
 
-export function AiSummary({ summary, summaryError, linkId, onRetry }: AiSummaryProps) {
-  // 실패: 이유 표시 + 재시도 버튼
+// maxDuration(60s) + 네트워크 여유
+const FAILURE_THRESHOLD_MS = 90_000
+
+export function AiSummary({ summary, summaryError, linkId, createdAt, onRetry }: AiSummaryProps) {
+  const [timedOut, setTimedOut] = useState(() =>
+    Date.now() - new Date(createdAt).getTime() > FAILURE_THRESHOLD_MS
+  )
+
+  useEffect(() => {
+    // summary/error 상태가 바뀌거나 링크가 바뀔 때 타이머 리셋
+    if (summary || summaryError) {
+      setTimedOut(false)
+      return
+    }
+
+    const elapsed = Date.now() - new Date(createdAt).getTime()
+    if (elapsed > FAILURE_THRESHOLD_MS) {
+      setTimedOut(true)
+      return
+    }
+
+    const t = setTimeout(() => setTimedOut(true), FAILURE_THRESHOLD_MS - elapsed)
+    return () => clearTimeout(t)
+  }, [summary, summaryError, linkId, createdAt])
+
+  // Case 1: DB에 명시적 에러 메시지 있음 (자막 없음, API 오류 등)
   if (summaryError) {
     return (
       <div className="space-y-2">
@@ -24,10 +52,25 @@ export function AiSummary({ summary, summaryError, linkId, onRetry }: AiSummaryP
     )
   }
 
-  // 생성 중: 스켈레톤
+  // Case 2: 에러가 DB에 안 쓰였지만 시간 초과 (fire-and-forget 실패 fallback)
+  if (!summary && timedOut) {
+    return (
+      <div className="space-y-2">
+        <p className="text-zinc-500 text-sm">요약을 생성하지 못했습니다.</p>
+        <button
+          onClick={() => onRetry(linkId)}
+          className="text-indigo-400 hover:text-indigo-300 text-xs transition-colors"
+        >
+          요약 다시 생성
+        </button>
+      </div>
+    )
+  }
+
+  // Case 3: 생성 중
   if (!summary) return <SkeletonSummary />
 
-  // 성공
+  // Case 4: 성공
   return (
     <div className="fade-in space-y-4">
       <div className="space-y-2">
