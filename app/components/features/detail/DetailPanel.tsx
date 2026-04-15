@@ -117,8 +117,8 @@ export function DetailPanel({
           <p className="text-zinc-400 text-xs font-medium uppercase tracking-wide mb-2">AI 요약</p>
           <AiSummary
             summary={link.aiSummary}
+            summaryError={link.aiSummaryError}
             linkId={link.id}
-            createdAt={link.createdAt}
             onRetry={onSummaryRetry}
           />
         </div>

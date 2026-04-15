@@ -1,61 +1,35 @@
-'use client'
-
-import { useEffect, useState } from 'react'
 import { SkeletonSummary } from '@/components/ui/Skeleton'
 import type { AiSummary as AiSummaryType } from '@/types'
 
 interface AiSummaryProps {
   summary: AiSummaryType | null
+  summaryError: string | null
   linkId: string
-  createdAt: string
   onRetry: (id: string) => void
 }
 
-// 링크 생성 후 이 시간이 지나도 summary가 null이면 실패로 간주
-const FAILURE_THRESHOLD_MS = 45_000
-
-export function AiSummary({ summary, linkId, createdAt, onRetry }: AiSummaryProps) {
-  const elapsed = Date.now() - new Date(createdAt).getTime()
-  const alreadyFailed = elapsed > FAILURE_THRESHOLD_MS
-
-  const [timedOut, setTimedOut] = useState(alreadyFailed)
-
-  useEffect(() => {
-    // summary가 들어오거나 링크가 바뀌면 상태 리셋
-    if (summary) { setTimedOut(false); return }
-
-    const elapsedNow = Date.now() - new Date(createdAt).getTime()
-    if (elapsedNow > FAILURE_THRESHOLD_MS) {
-      setTimedOut(true)
-      return
-    }
-
-    // 남은 시간만 대기
-    const remaining = FAILURE_THRESHOLD_MS - elapsedNow
-    const t = setTimeout(() => setTimedOut(true), remaining)
-    return () => clearTimeout(t)
-  }, [summary, linkId, createdAt])
-
-  if (!summary) {
-    if (timedOut) {
-      return (
-        <div className="space-y-2">
-          <p className="text-zinc-500 text-sm">요약을 생성하지 못했습니다.</p>
-          <button
-            onClick={() => { setTimedOut(false); onRetry(linkId) }}
-            className="text-indigo-400 hover:text-indigo-300 text-xs transition-colors"
-          >
-            요약 다시 생성
-          </button>
-        </div>
-      )
-    }
-    return <SkeletonSummary />
+export function AiSummary({ summary, summaryError, linkId, onRetry }: AiSummaryProps) {
+  // 실패: 이유 표시 + 재시도 버튼
+  if (summaryError) {
+    return (
+      <div className="space-y-2">
+        <p className="text-zinc-500 text-sm">{summaryError}</p>
+        <button
+          onClick={() => onRetry(linkId)}
+          className="text-indigo-400 hover:text-indigo-300 text-xs transition-colors"
+        >
+          요약 다시 생성
+        </button>
+      </div>
+    )
   }
 
+  // 생성 중: 스켈레톤
+  if (!summary) return <SkeletonSummary />
+
+  // 성공
   return (
     <div className="fade-in space-y-4">
-      {/* 3줄 요약 */}
       <div className="space-y-2">
         {summary.summary.map((line, i) => (
           <p key={i} className="text-zinc-200 text-sm leading-relaxed">
@@ -63,7 +37,6 @@ export function AiSummary({ summary, linkId, createdAt, onRetry }: AiSummaryProp
           </p>
         ))}
       </div>
-      {/* 인사이트 */}
       {summary.insights.length > 0 && (
         <div>
           <p className="text-zinc-400 text-xs font-medium mb-2 uppercase tracking-wide">인사이트</p>

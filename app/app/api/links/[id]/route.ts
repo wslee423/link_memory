@@ -16,7 +16,7 @@ export async function GET(
     .from('links')
     .select(`
       id, url, title, thumbnail_url, channel_name, published_at,
-      ai_summary, memo, created_at,
+      ai_summary, ai_summary_error, memo, created_at,
       link_tags ( tag_id, tags ( id, name ) )
     `)
     .eq('id', id)

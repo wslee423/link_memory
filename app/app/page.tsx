@@ -92,6 +92,10 @@ export default function Home() {
   }
 
   async function handleSummaryRetry(linkId: string) {
+    // 에러 메시지 즉시 제거 → 스켈레톤으로 전환
+    setLinks((prev) => prev.map((l) =>
+      l.id === linkId ? { ...l, aiSummaryError: null } : l
+    ))
     await fetch(`/api/links/${linkId}/summarize`, { method: 'POST' })
     await fetchLinks()
   }

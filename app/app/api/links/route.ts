@@ -16,6 +16,7 @@ interface RawLink {
   channel_name: string | null
   published_at: string | null
   ai_summary: unknown
+  ai_summary_error: string | null
   memo: string
   created_at: string
   is_archived: boolean
@@ -31,6 +32,7 @@ function toLink(raw: RawLink) {
     channelName: raw.channel_name,
     publishedAt: raw.published_at,
     aiSummary: raw.ai_summary ?? null,
+    aiSummaryError: raw.ai_summary_error ?? null,
     memo: raw.memo,
     createdAt: raw.created_at,
     isArchived: raw.is_archived,
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
     .from('links')
     .select(`
       id, url, title, thumbnail_url, channel_name, published_at,
-      ai_summary, memo, created_at, is_archived,
+      ai_summary, ai_summary_error, memo, created_at, is_archived,
       link_tags ( tags ( id, name ) )
     `)
     .eq('user_id', user.id)
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
       transcript,
       memo: '',
     })
-    .select('id, url, title, thumbnail_url, channel_name, published_at, ai_summary, memo, created_at, is_archived')
+    .select('id, url, title, thumbnail_url, channel_name, published_at, ai_summary, ai_summary_error, memo, created_at, is_archived')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -123,6 +125,7 @@ export async function POST(request: NextRequest) {
       channelName: link.channel_name,
       publishedAt: link.published_at,
       aiSummary: link.ai_summary ?? null,
+      aiSummaryError: link.ai_summary_error ?? null,
       createdAt: link.created_at,
       isArchived: link.is_archived,
       tags: [],

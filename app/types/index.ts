@@ -6,6 +6,7 @@ export interface Link {
   channelName: string | null
   publishedAt: string | null
   aiSummary: AiSummary | null
+  aiSummaryError: string | null
   memo: string
   tags: Tag[]
   createdAt: string
