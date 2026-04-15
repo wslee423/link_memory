@@ -95,6 +95,14 @@ export default function Home() {
     await fetchLinks()
   }
 
+  // 링크 삭제
+  async function handleDelete(linkId: string) {
+    const res = await fetch(`/api/links/${linkId}`, { method: 'DELETE' })
+    if (!res.ok) { show('삭제에 실패했습니다.', 'error'); return }
+    setLinks((prev) => prev.filter((l) => l.id !== linkId))
+    setSelectedId(null)
+  }
+
   // 태그 추가 (기존 태그)
   async function handleTagAdd(linkId: string, tag: Tag) {
     const link = links.find((l) => l.id === linkId)
@@ -159,6 +167,7 @@ export default function Home() {
       onTagAdd={handleTagAdd}
       onTagRemove={handleTagRemove}
       onTagCreate={handleTagCreate}
+      onDelete={handleDelete}
     />
   ) : null
 

@@ -8,21 +8,9 @@ interface AiSummaryProps {
 }
 
 export function AiSummary({ summary, linkId, onRetry }: AiSummaryProps) {
-  if (summary === undefined) return <SkeletonSummary />
-
-  if (!summary) {
-    return (
-      <div className="text-center py-4">
-        <p className="text-zinc-400 text-sm">요약을 생성할 수 없습니다.</p>
-        <button
-          onClick={() => onRetry(linkId)}
-          className="mt-2 text-indigo-400 hover:text-indigo-300 text-sm underline"
-        >
-          재시도
-        </button>
-      </div>
-    )
-  }
+  // null = 생성 중 또는 실패. 스켈레톤 표시 후 5초 폴링으로 자동 갱신.
+  // 60초 이상 null이면 재시도 버튼은 LinkCard 상단에서 별도 접근 가능.
+  if (!summary) return <SkeletonSummary />
 
   return (
     <div className="fade-in space-y-4">
@@ -48,6 +36,13 @@ export function AiSummary({ summary, linkId, onRetry }: AiSummaryProps) {
           </ul>
         </div>
       )}
+      {/* 재시도 버튼 (요약 완료 후에도 수동 재실행 가능) */}
+      <button
+        onClick={() => onRetry(linkId)}
+        className="text-zinc-600 hover:text-indigo-400 text-xs transition-colors"
+      >
+        요약 다시 생성
+      </button>
     </div>
   )
 }
