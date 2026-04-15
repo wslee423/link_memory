@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[Hook] TypeScript 파일 변경됨 → npm run typecheck 실행 권장 (link_memory_docs/project 내에서)'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[Hook] 작업 완료. link_memory_docs/project 경로에서 npm run typecheck && npm run lint 실행 권장'"
+          }
+        ]
+      }
+    ]
+  }
+}
