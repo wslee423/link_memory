@@ -18,8 +18,10 @@ export default function Home() {
   const { toast, show, hide } = useToast()
 
   const selectedLink = links.find((l) => l.id === selectedId) ?? null
+  const filteredLinks = selectedTagId
+    ? links.filter((l) => l.tags.some((t) => t.id === selectedTagId))
+    : links
 
-  // 태그 목록 조회
   const fetchTags = useCallback(async () => {
     const res = await fetch('/api/tags')
     if (!res.ok) return
@@ -27,7 +29,7 @@ export default function Home() {
     setAllTags(tags)
   }, [])
 
-  // 링크 목록 조회 (전체, 필터링은 클라이언트에서)
+  // 전체 링크 조회 — 필터는 클라이언트에서
   const fetchLinks = useCallback(async () => {
     const res = await fetch('/api/links')
     if (!res.ok) return
@@ -43,19 +45,13 @@ export default function Home() {
     void load()
   }, [fetchLinks, fetchTags])
 
-  // AI 요약 폴링 (미완료 링크 대상)
+  // AI 요약 미완료 링크가 있으면 5초마다 폴링
   useEffect(() => {
-    const pending = links.filter((l) => l.aiSummary === null)
-    if (pending.length === 0) return
-
-    const id = setInterval(async () => {
-      await fetchLinks()
-    }, 5000)
-
+    if (links.every((l) => l.aiSummary !== null)) return
+    const id = setInterval(fetchLinks, 5000)
     return () => clearInterval(id)
   }, [links, fetchLinks])
 
-  // 링크 저장
   async function handleSave(url: string) {
     const res = await fetch('/api/links', {
       method: 'POST',
@@ -73,12 +69,10 @@ export default function Home() {
       show(data.error ?? '저장에 실패했습니다.', 'error')
       return
     }
-
     await fetchLinks()
     setSelectedId(data.link.id)
   }
 
-  // 메모 저장
   async function handleMemoSave(linkId: string, memo: string) {
     const res = await fetch(`/api/links/${linkId}`, {
       method: 'PATCH',
@@ -89,13 +83,11 @@ export default function Home() {
     setLinks((prev) => prev.map((l) => l.id === linkId ? { ...l, memo } : l))
   }
 
-  // AI 요약 재시도
   async function handleSummaryRetry(linkId: string) {
     await fetch(`/api/links/${linkId}/summarize`, { method: 'POST' })
     await fetchLinks()
   }
 
-  // 링크 삭제
   async function handleDelete(linkId: string) {
     const res = await fetch(`/api/links/${linkId}`, { method: 'DELETE' })
     if (!res.ok) { show('삭제에 실패했습니다.', 'error'); return }
@@ -103,37 +95,34 @@ export default function Home() {
     setSelectedId(null)
   }
 
-  // 태그 추가 (기존 태그)
+  // 링크에 태그 PATCH (tagIds 전체 교체)
+  async function patchTags(linkId: string, tagIds: string[]) {
+    const res = await fetch(`/api/links/${linkId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tagIds }),
+    })
+    return res.ok
+  }
+
   async function handleTagAdd(linkId: string, tag: Tag) {
     const link = links.find((l) => l.id === linkId)
     if (!link) return
-    const newTagIds = [...link.tags.map((t) => t.id), tag.id]
-    const res = await fetch(`/api/links/${linkId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tagIds: newTagIds }),
-    })
-    if (!res.ok) { show('태그 추가 실패', 'error'); return }
+    const ok = await patchTags(linkId, [...link.tags.map((t) => t.id), tag.id])
+    if (!ok) { show('태그 추가 실패', 'error'); return }
     setLinks((prev) => prev.map((l) => l.id === linkId ? { ...l, tags: [...l.tags, tag] } : l))
   }
 
-  // 태그 제거
   async function handleTagRemove(linkId: string, tagId: string) {
     const link = links.find((l) => l.id === linkId)
     if (!link) return
-    const newTagIds = link.tags.filter((t) => t.id !== tagId).map((t) => t.id)
-    const res = await fetch(`/api/links/${linkId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tagIds: newTagIds }),
-    })
-    if (!res.ok) { show('태그 제거 실패', 'error'); return }
+    const ok = await patchTags(linkId, link.tags.filter((t) => t.id !== tagId).map((t) => t.id))
+    if (!ok) { show('태그 제거 실패', 'error'); return }
     setLinks((prev) => prev.map((l) =>
       l.id === linkId ? { ...l, tags: l.tags.filter((t) => t.id !== tagId) } : l
     ))
   }
 
-  // 태그 새로 만들고 추가
   async function handleTagCreate(linkId: string, name: string) {
     const tagRes = await fetch('/api/tags', {
       method: 'POST',
@@ -146,39 +135,13 @@ export default function Home() {
     await fetchTags()
   }
 
-  function handleSelect(id: string) {
-    setSelectedId(id)
-  }
-
-  function handleBack() {
-    setSelectedId(null)
-  }
-
-  const filteredLinks = selectedTagId
-    ? links.filter((l) => l.tags.some((t) => t.id === selectedTagId))
-    : links
-
-  const detailPanel = selectedLink ? (
-    <DetailPanel
-      link={selectedLink}
-      allTags={allTags}
-      onMemoSave={handleMemoSave}
-      onSummaryRetry={handleSummaryRetry}
-      onTagAdd={handleTagAdd}
-      onTagRemove={handleTagRemove}
-      onTagCreate={handleTagCreate}
-      onDelete={handleDelete}
-    />
-  ) : null
-
   return (
     <div className="flex flex-col h-screen bg-zinc-950">
-      {/* Header */}
       <header className="shrink-0 sticky top-0 z-10 bg-zinc-950 border-b border-zinc-800 px-4 py-3 flex items-center gap-4">
-        {/* 모바일: 상세 패널 열려있을 때 뒤로가기 버튼 */}
+        {/* 모바일: 상세 패널 열려있을 때 뒤로가기 */}
         {selectedLink && (
           <button
-            onClick={handleBack}
+            onClick={() => setSelectedId(null)}
             className="md:hidden shrink-0 text-zinc-400 hover:text-zinc-100 transition-colors p-1 -ml-1"
             aria-label="목록으로 돌아가기"
           >
@@ -189,19 +152,15 @@ export default function Home() {
         <UrlInputBar onSave={handleSave} />
       </header>
 
-      {/* TagBar — 모바일에서 상세 패널 열리면 숨김 */}
-      {!loading && !selectedLink && (
-        <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />
-      )}
-      {!loading && selectedLink && (
-        <div className="hidden md:block">
+      {/* TagBar: 모바일에서 상세 패널 열리면 숨김 */}
+      {!loading && (
+        <div className={selectedLink ? 'hidden md:block' : ''}>
           <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />
         </div>
       )}
 
-      {/* Body — 2패널 */}
       <div className="flex flex-1 overflow-hidden">
-        {/* 좌: 링크 목록 — 모바일에서 상세 선택 시 숨김 */}
+        {/* 좌: 링크 목록 */}
         <div className={`border-r border-zinc-800 overflow-y-auto p-2 space-y-1
           ${selectedLink ? 'hidden md:block md:w-2/5' : 'w-full md:w-2/5'}`}>
           {loading ? (
@@ -220,23 +179,29 @@ export default function Home() {
                 key={link.id}
                 link={link}
                 isSelected={link.id === selectedId}
-                onSelect={handleSelect}
+                onSelect={setSelectedId}
               />
             ))
           )}
         </div>
 
-        {/* 우: 상세 패널 — 모바일에서 전체 화면, 데스크탑에서 60% */}
-        {selectedLink && (
-          <div className="w-full md:w-3/5 overflow-hidden">
-            {detailPanel}
-          </div>
-        )}
-        {!selectedLink && (
-          <div className="hidden md:flex md:w-3/5 items-center justify-center text-zinc-500 text-sm">
-            링크를 선택하면 상세 내용이 표시됩니다
-          </div>
-        )}
+        {/* 우: 상세 패널 */}
+        <div className={`overflow-hidden ${selectedLink ? 'w-full md:w-3/5' : 'hidden md:flex md:w-3/5 items-center justify-center'}`}>
+          {selectedLink ? (
+            <DetailPanel
+              link={selectedLink}
+              allTags={allTags}
+              onMemoSave={handleMemoSave}
+              onSummaryRetry={handleSummaryRetry}
+              onTagAdd={handleTagAdd}
+              onTagRemove={handleTagRemove}
+              onTagCreate={handleTagCreate}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <p className="text-zinc-500 text-sm">링크를 선택하면 상세 내용이 표시됩니다</p>
+          )}
+        </div>
       </div>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={hide} />}

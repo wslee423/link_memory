@@ -36,7 +36,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // API 경로 제외: 미인증 API 요청은 각 route.ts에서 401 반환
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

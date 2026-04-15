@@ -23,10 +23,6 @@ export interface Tag {
   name: string
 }
 
-export interface LinkWithTags extends Link {
-  link_tags: { tags: Tag }[]
-}
-
 // API 요청/응답 타입
 export interface CreateLinkRequest {
   url: string
