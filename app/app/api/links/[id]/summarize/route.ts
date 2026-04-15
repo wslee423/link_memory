@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { generateSummary } from '@/lib/openai/summarize'
 
+// Vercel 기본 10초 제한을 60초로 확장 (Pro: 300초까지 가능)
+export const maxDuration = 60
+
 // POST /api/links/[id]/summarize — AI 요약 실행
 export async function POST(
   request: NextRequest,
