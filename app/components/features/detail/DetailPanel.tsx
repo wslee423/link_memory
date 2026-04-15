@@ -30,7 +30,7 @@ export function DetailPanel({
       {/* 썸네일 */}
       {link.thumbnailUrl && (
         <a href={link.url} target="_blank" rel="noopener noreferrer">
-          <div className="relative w-4/5 aspect-video rounded-lg overflow-hidden">
+          <div className="relative w-1/2 aspect-video rounded-lg overflow-hidden">
             <Image
               src={link.thumbnailUrl}
               alt={link.title}
