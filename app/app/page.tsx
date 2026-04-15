@@ -142,6 +142,32 @@ export default function Home() {
     ))
   }
 
+  async function handleTagRename(tagId: string, newName: string) {
+    const res = await fetch(`/api/tags/${tagId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName }),
+    })
+    if (!res.ok) { show('태그 이름 변경 실패', 'error'); return }
+    const { tag } = await res.json() as { tag: { id: string; name: string } }
+    setAllTags((prev) => prev.map((t) => t.id === tagId ? tag : t))
+    setLinks((prev) => prev.map((l) => ({
+      ...l,
+      tags: l.tags.map((t) => t.id === tagId ? tag : t),
+    })))
+  }
+
+  async function handleTagDelete(tagId: string) {
+    const res = await fetch(`/api/tags/${tagId}`, { method: 'DELETE' })
+    if (!res.ok) { show('태그 삭제 실패', 'error'); return }
+    setAllTags((prev) => prev.filter((t) => t.id !== tagId))
+    setLinks((prev) => prev.map((l) => ({
+      ...l,
+      tags: l.tags.filter((t) => t.id !== tagId),
+    })))
+    if (selectedTagId === tagId) setSelectedTagId(null)
+  }
+
   async function handleTagCreate(linkId: string, name: string) {
     const tagRes = await fetch('/api/tags', {
       method: 'POST',
@@ -175,7 +201,13 @@ export default function Home() {
       {!loading && (
         <div className={`flex items-center gap-2 pr-2 ${selectedLink ? 'hidden md:flex' : ''}`}>
           <div className="flex-1">
-            <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />
+            <TagBar
+                tags={allTags}
+                selectedTagId={selectedTagId}
+                onSelect={setSelectedTagId}
+                onRename={handleTagRename}
+                onDelete={handleTagDelete}
+              />
           </div>
           <button
             onClick={() => { setShowArchived((v) => !v); setSelectedId(null); setSearchQuery('') }}
