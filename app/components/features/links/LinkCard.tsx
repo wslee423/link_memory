@@ -61,10 +61,7 @@ export function LinkCard({ link, isSelected, onSelect }: LinkCardProps) {
             )}
           </div>
         )}
-        {/* AI 요약 상태 */}
-        {!link.aiSummary && (
-          <span className="text-xs text-indigo-400">AI 요약 생성 중...</span>
-        )}
+
       </div>
     </div>
   )
