@@ -27,35 +27,35 @@ export function DetailPanel({
 }: DetailPanelProps) {
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
-      {/* 썸네일 */}
-      {link.thumbnailUrl && (
-        <a href={link.url} target="_blank" rel="noopener noreferrer">
-          <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-            <Image
-              src={link.thumbnailUrl}
-              alt={link.title}
-              fill
-              className="object-cover hover:opacity-90 transition-opacity"
-            />
-          </div>
-        </a>
-      )}
-
-      {/* 제목 + 메타 */}
-      <div>
-        <h2 className="text-zinc-100 font-semibold leading-snug">
-          <a href={link.url} target="_blank" rel="noopener noreferrer"
-            className="hover:text-indigo-400 transition-colors">
-            {link.title}
+      {/* 썸네일 + 제목 가로 배치 */}
+      <div className="flex gap-3 items-start">
+        {link.thumbnailUrl && (
+          <a href={link.url} target="_blank" rel="noopener noreferrer" className="shrink-0">
+            <div className="relative w-36 h-24 rounded-lg overflow-hidden">
+              <Image
+                src={link.thumbnailUrl}
+                alt={link.title}
+                fill
+                className="object-cover hover:opacity-90 transition-opacity"
+              />
+            </div>
           </a>
-        </h2>
-        {(link.channelName || link.publishedAt) && (
-          <p className="text-zinc-400 text-sm mt-1">
-            {link.channelName}
-            {link.channelName && link.publishedAt && ' · '}
-            {link.publishedAt}
-          </p>
         )}
+        <div className="flex-1 min-w-0">
+          <h2 className="text-zinc-100 font-semibold leading-snug">
+            <a href={link.url} target="_blank" rel="noopener noreferrer"
+              className="hover:text-indigo-400 transition-colors">
+              {link.title}
+            </a>
+          </h2>
+          {(link.channelName || link.publishedAt) && (
+            <p className="text-zinc-400 text-sm mt-1">
+              {link.channelName}
+              {link.channelName && link.publishedAt && ' · '}
+              {link.publishedAt}
+            </p>
+          )}
+        </div>
       </div>
 
       <hr className="border-zinc-700" />
