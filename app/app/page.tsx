@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { UrlInputBar } from '@/components/features/links/UrlInputBar'
 import { LinkCard } from '@/components/features/links/LinkCard'
+import { SearchBar } from '@/components/features/links/SearchBar'
 import { TagBar } from '@/components/features/tags/TagBar'
 import { DetailPanel } from '@/components/features/detail/DetailPanel'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -14,13 +15,17 @@ export default function Home() {
   const [allTags, setAllTags] = useState<Tag[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const { toast, show, hide } = useToast()
 
   const selectedLink = links.find((l) => l.id === selectedId) ?? null
-  const filteredLinks = selectedTagId
-    ? links.filter((l) => l.tags.some((t) => t.id === selectedTagId))
-    : links
+  const filteredLinks = links.filter((l) => {
+    const matchesTag = !selectedTagId || l.tags.some((t) => t.id === selectedTagId)
+    const q = searchQuery.trim().toLowerCase()
+    const matchesSearch = !q || l.title.toLowerCase().includes(q) || l.url.toLowerCase().includes(q)
+    return matchesTag && matchesSearch
+  })
 
   const fetchTags = useCallback(async () => {
     const res = await fetch('/api/tags')
@@ -161,14 +166,20 @@ export default function Home() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* 좌: 링크 목록 */}
-        <div className={`border-r border-zinc-800 overflow-y-auto p-2 space-y-1
-          ${selectedLink ? 'hidden md:block md:w-2/5' : 'w-full md:w-2/5'}`}>
+        <div className={`border-r border-zinc-800 overflow-y-auto flex flex-col
+          ${selectedLink ? 'hidden md:flex md:w-2/5' : 'w-full md:w-2/5'}`}>
+          {!loading && (
+            <SearchBar value={searchQuery} onChange={setSearchQuery} />
+          )}
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {loading ? (
             Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
           ) : filteredLinks.length === 0 ? (
             <div className="flex items-center justify-center h-full text-center p-8">
               <p className="text-zinc-500 text-sm">
-                {selectedTagId
+                {searchQuery.trim()
+                  ? `'${searchQuery.trim()}' 검색 결과가 없어요`
+                  : selectedTagId
                   ? `'${allTags.find((t) => t.id === selectedTagId)?.name}' 태그가 달린 링크가 없어요`
                   : '아직 저장된 링크가 없어요.\nURL을 붙여넣어 시작해보세요 🔖'}
               </p>
@@ -183,6 +194,7 @@ export default function Home() {
               />
             ))
           )}
+          </div>
         </div>
 
         {/* 우: 상세 패널 */}
