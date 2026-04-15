@@ -52,9 +52,9 @@ export default function Home() {
     void load()
   }, [fetchLinks, fetchTags])
 
-  // AI 요약 미완료 링크가 있으면 5초마다 폴링
+  // AI 요약 미완료 링크가 있으면 5초마다 폴링 (성공 또는 에러 확정 시 중단)
   useEffect(() => {
-    if (links.every((l) => l.aiSummary !== null)) return
+    if (links.every((l) => l.aiSummary !== null || l.aiSummaryError !== null)) return
     const id = setInterval(fetchLinks, 5000)
     return () => clearInterval(id)
   }, [links, fetchLinks])
@@ -96,7 +96,8 @@ export default function Home() {
     setLinks((prev) => prev.map((l) =>
       l.id === linkId ? { ...l, aiSummaryError: null } : l
     ))
-    await fetch(`/api/links/${linkId}/summarize`, { method: 'POST' })
+    // 네트워크 오류는 무시 — fetchLinks에서 최신 상태 반영
+    await fetch(`/api/links/${linkId}/summarize`, { method: 'POST' }).catch(() => {})
     await fetchLinks()
   }
 
@@ -243,7 +244,7 @@ export default function Home() {
                   ? `'${searchQuery.trim()}' 검색 결과가 없어요`
                   : selectedTagId
                   ? `'${allTags.find((t) => t.id === selectedTagId)?.name}' 태그가 달린 링크가 없어요`
-                  : '아직 저장된 링크가 없어요.\nURL을 붙여넣어 시작해보세요 🔖'}
+                  : <>아직 저장된 링크가 없어요.<br />URL을 붙여넣어 시작해보세요 🔖</>}
               </p>
             </div>
           ) : (

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchYouTubeMetadata } from '@/lib/youtube/metadata'
 import { fetchTranscript } from '@/lib/youtube/transcript'
-import type { CreateLinkRequest, Tag } from '@/types'
+import type { AiSummary, CreateLinkRequest, Link, Tag } from '@/types'
 
 interface RawLinkTag {
   tags: Tag[] | Tag | null
@@ -15,7 +15,7 @@ interface RawLink {
   thumbnail_url: string | null
   channel_name: string | null
   published_at: string | null
-  ai_summary: unknown
+  ai_summary: AiSummary | null
   ai_summary_error: string | null
   memo: string
   created_at: string
@@ -23,7 +23,7 @@ interface RawLink {
   link_tags: RawLinkTag[]
 }
 
-function toLink(raw: RawLink) {
+function toLink(raw: RawLink): Link {
   return {
     id: raw.id,
     url: raw.url,
@@ -120,15 +120,18 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     link: {
-      ...link,
+      id: link.id,
+      url: link.url,
+      title: link.title,
       thumbnailUrl: link.thumbnail_url,
       channelName: link.channel_name,
       publishedAt: link.published_at,
       aiSummary: link.ai_summary ?? null,
       aiSummaryError: link.ai_summary_error ?? null,
+      memo: link.memo,
       createdAt: link.created_at,
       isArchived: link.is_archived,
       tags: [],
-    },
+    } satisfies Link,
   }, { status: 201 })
 }

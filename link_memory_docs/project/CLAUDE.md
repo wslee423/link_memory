@@ -45,14 +45,14 @@ npm run lint       # ESLint
 
 ## File Structure
 ```
-/app/api/         API Routes (route.ts)
-/components/ui/   재사용 원자 컴포넌트
-/components/features/  기능별 컴포넌트
-/lib/supabase/    Supabase 클라이언트 (중앙 관리)
-/lib/openai/      OpenAI 클라이언트
-/lib/youtube/     YouTube API 유틸
-/types/index.ts   전체 공용 타입
-/supabase/migrations/  DB 마이그레이션
+/app/api/              API Routes (route.ts)
+/components/ui/        재사용 원자 컴포넌트 (Skeleton, Toast)
+/components/features/  기능별 컴포넌트 (links, tags, detail)
+/lib/supabase/         Supabase 클라이언트 (client.ts, server.ts)
+/lib/openai/           OpenAI 클라이언트 (summarize.ts)
+/lib/youtube/          YouTube API 유틸 (metadata.ts, transcript.ts)
+/types/index.ts        전체 공용 타입
+/proxy.ts              인증 미들웨어
 ```
 
 ## Design

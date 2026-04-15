@@ -28,16 +28,16 @@
 ## 전체 파일 구조
 ```
 /app
-  /api/links/route.ts
-  /api/links/[id]/route.ts
-  /api/links/[id]/summarize/route.ts
-  /api/tags/route.ts
-  /api/tags/[id]/route.ts
+  /api/links/route.ts                  GET(목록), POST(저장)
+  /api/links/[id]/route.ts             GET, PATCH, DELETE
+  /api/links/[id]/summarize/route.ts   POST (AI 요약 실행)
+  /api/tags/route.ts                   GET, POST
+  /api/tags/[id]/route.ts              PATCH(이름변경), DELETE
   /login/page.tsx
-  /save/page.tsx
+  /save/page.tsx                       북마클릿 팝업
   /page.tsx
   /layout.tsx
-  proxy.ts                  ← Next.js 16 (구 middleware.ts)
+  proxy.ts                             인증 미들웨어 (Next.js 16)
 
 /components
   /ui/Skeleton.tsx, Toast.tsx
@@ -50,7 +50,6 @@
 /lib/youtube/metadata.ts, transcript.ts
 
 /types/index.ts
-/supabase/migrations/001_init_schema.sql
 
 /.claude/commands/new-feature.md, check.md, progress.md
 ```
@@ -66,6 +65,7 @@ export interface Link {
   publishedAt: string | null
   // transcript: 서버 전용, 클라이언트 타입 미포함
   aiSummary: AiSummary | null
+  aiSummaryError: string | null  // 실패 사유 (사용자 표시용)
   memo: string
   tags: Tag[]
   createdAt: string
@@ -80,8 +80,12 @@ export interface Tag {
   id: string
   name: string
 }
-export interface UpdateTagRequest {
-  name: string
+export interface CreateTagRequest { name: string }
+export interface UpdateTagRequest { name: string }
+export interface UpdateLinkRequest {
+  memo?: string
+  tagIds?: string[]
+  isArchived?: boolean
 }
 ```
 
@@ -95,31 +99,32 @@ const { data: { user } } = await supabase.auth.getUser()
 if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 ```
 
-### 메모 자동저장 훅
+### 메모 자동저장 (MemoEditor.tsx)
 ```typescript
-function useDebouncedSave(value: string, onSave: (v: string) => void, delay = 1500) {
-  const timer = useRef<NodeJS.Timeout>()
-  useEffect(() => {
-    clearTimeout(timer.current)
-    timer.current = setTimeout(() => onSave(value), delay)
-    return () => clearTimeout(timer.current)
-  }, [value])
-}
+// useRef로 타이머 관리, onSave throws on failure
+const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+clearTimeout(timer.current)
+timer.current = setTimeout(async () => {
+  try { await onSave(linkId, val); setStatus('saved') }
+  catch { setStatus('error') }
+}, 1500)
 ```
 
-### AI 요약 스켈레톤
+### AI 요약 상태 머신 (AiSummary.tsx)
 ```typescript
-// 생성 중: shimmer 스켈레톤
-// 완료: fade-in 콘텐츠 전환
-// 실패: "요약 생성 실패 - 재시도" 버튼
+// 이 순서로 분기할 것 — error를 반드시 최우선으로
+if (summaryError) return <RetryButton reason={summaryError} />
+if (!summary && timedOut) return <RetryButton reason="요약을 생성하지 못했습니다." />
 if (!summary) return <SkeletonSummary />
 return <div className="fade-in">...</div>
 ```
 
 ### 태그 자동완성 (클라이언트 필터링)
 ```typescript
-// GET /api/tags 전체 목록 1회 로드 후 클라이언트 필터링
-const suggestions = allTags.filter(t => t.name.includes(input))
+// GET /api/tags 전체 목록 1회 로드 후 클라이언트 필터링 (서버 재요청 없음)
+const suggestions = input.trim()
+  ? allTags.filter((t) => !selectedIds.has(t.id) && t.name.includes(input.trim()))
+  : []
 ```
 
 ## 작업 완료 보고 형식

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import type { UpdateLinkRequest } from '@/types'
+import type { Link, Tag, UpdateLinkRequest } from '@/types'
 
 // GET /api/links/[id] — 상세 조회
 export async function GET(
@@ -16,8 +16,8 @@ export async function GET(
     .from('links')
     .select(`
       id, url, title, thumbnail_url, channel_name, published_at,
-      ai_summary, ai_summary_error, memo, created_at,
-      link_tags ( tag_id, tags ( id, name ) )
+      ai_summary, ai_summary_error, memo, created_at, is_archived,
+      link_tags ( tags ( id, name ) )
     `)
     .eq('id', id)
     .eq('user_id', user.id)
@@ -25,7 +25,29 @@ export async function GET(
 
   if (error) return NextResponse.json({ error: '링크를 찾을 수 없습니다.' }, { status: 404 })
 
-  return NextResponse.json({ link: data })
+  const raw = data as typeof data & {
+    link_tags: { tags: Tag | Tag[] | null }[]
+  }
+
+  return NextResponse.json({
+    link: {
+      id: raw.id,
+      url: raw.url,
+      title: raw.title,
+      thumbnailUrl: raw.thumbnail_url,
+      channelName: raw.channel_name,
+      publishedAt: raw.published_at,
+      aiSummary: raw.ai_summary ?? null,
+      aiSummaryError: raw.ai_summary_error ?? null,
+      memo: raw.memo,
+      createdAt: raw.created_at,
+      isArchived: raw.is_archived,
+      tags: raw.link_tags.flatMap(({ tags }) => {
+        if (!tags) return []
+        return Array.isArray(tags) ? tags : [tags]
+      }),
+    } satisfies Link,
+  })
 }
 
 // PATCH /api/links/[id] — 메모/태그 수정
@@ -84,7 +106,7 @@ export async function PATCH(
   return NextResponse.json({ success: true })
 }
 
-// DELETE /api/links/[id] — 삭제 (API만, MVP에서 UI 미노출)
+// DELETE /api/links/[id] — 삭제
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
