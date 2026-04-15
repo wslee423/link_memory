@@ -7,21 +7,34 @@ import type { AiSummary as AiSummaryType } from '@/types'
 interface AiSummaryProps {
   summary: AiSummaryType | null
   linkId: string
+  createdAt: string
   onRetry: (id: string) => void
 }
 
-// 45초 동안 null이면 생성 실패로 간주 (OpenAI 30초 타임아웃 + 여유)
-const FAILURE_TIMEOUT_MS = 45_000
+// 링크 생성 후 이 시간이 지나도 summary가 null이면 실패로 간주
+const FAILURE_THRESHOLD_MS = 45_000
 
-export function AiSummary({ summary, linkId, onRetry }: AiSummaryProps) {
-  const [timedOut, setTimedOut] = useState(false)
+export function AiSummary({ summary, linkId, createdAt, onRetry }: AiSummaryProps) {
+  const elapsed = Date.now() - new Date(createdAt).getTime()
+  const alreadyFailed = elapsed > FAILURE_THRESHOLD_MS
+
+  const [timedOut, setTimedOut] = useState(alreadyFailed)
 
   useEffect(() => {
-    setTimedOut(false)
-    if (summary) return
-    const t = setTimeout(() => setTimedOut(true), FAILURE_TIMEOUT_MS)
+    // summary가 들어오거나 링크가 바뀌면 상태 리셋
+    if (summary) { setTimedOut(false); return }
+
+    const elapsedNow = Date.now() - new Date(createdAt).getTime()
+    if (elapsedNow > FAILURE_THRESHOLD_MS) {
+      setTimedOut(true)
+      return
+    }
+
+    // 남은 시간만 대기
+    const remaining = FAILURE_THRESHOLD_MS - elapsedNow
+    const t = setTimeout(() => setTimedOut(true), remaining)
     return () => clearTimeout(t)
-  }, [summary, linkId])
+  }, [summary, linkId, createdAt])
 
   if (!summary) {
     if (timedOut) {
