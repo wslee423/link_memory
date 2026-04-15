@@ -6,12 +6,12 @@ MVP를 1주일 이내에 배포 가능한 상태로 만든다.
 ## Milestone 1 — MVP (~7일)
 
 ### Day 1-2: 기반 세팅
-- [ ] Next.js 14 프로젝트 세팅 (App Router)
-- [ ] Tailwind CSS 다크모드 + 색상 팔레트 설정
+- [x] Next.js 14 프로젝트 세팅 (App Router) — 2026-04-15
+- [x] Tailwind CSS 다크모드 + 색상 팔레트 설정 — 2026-04-15
 - [ ] Supabase 스키마 마이그레이션 (links, tags, link_tags + RLS)
-- [ ] Supabase Auth 로그인 페이지
-- [ ] 환경변수 세팅 + Vercel 배포 파이프라인
-- [ ] types/index.ts 타입 정의
+- [x] Supabase Auth 로그인 페이지 — 2026-04-15
+- [x] 환경변수 세팅 + Vercel 배포 파이프라인 — 2026-04-15
+- [x] types/index.ts 타입 정의 — 2026-04-15
 
 ### Day 3-4: 백엔드 API
 - [ ] POST /api/links (저장 + 메타데이터 트리거)
