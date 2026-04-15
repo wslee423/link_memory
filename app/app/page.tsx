@@ -128,7 +128,6 @@ export default function Home() {
 
   // 태그 새로 만들고 추가
   async function handleTagCreate(linkId: string, name: string) {
-    // 1. 태그 생성
     const tagRes = await fetch('/api/tags', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -136,33 +135,67 @@ export default function Home() {
     })
     if (!tagRes.ok) { show('태그 생성 실패', 'error'); return }
     const { tag } = await tagRes.json() as { tag: Tag }
-
-    // 2. 링크에 태그 추가
     await handleTagAdd(linkId, tag)
-
-    // 3. 전체 태그 목록 갱신
     await fetchTags()
+  }
+
+  function handleSelect(id: string) {
+    setSelectedId(id)
+  }
+
+  function handleBack() {
+    setSelectedId(null)
   }
 
   const filteredLinks = selectedTagId
     ? links.filter((l) => l.tags.some((t) => t.id === selectedTagId))
     : links
 
+  const detailPanel = selectedLink ? (
+    <DetailPanel
+      link={selectedLink}
+      allTags={allTags}
+      onMemoSave={handleMemoSave}
+      onSummaryRetry={handleSummaryRetry}
+      onTagAdd={handleTagAdd}
+      onTagRemove={handleTagRemove}
+      onTagCreate={handleTagCreate}
+    />
+  ) : null
+
   return (
     <div className="flex flex-col h-screen bg-zinc-950">
       {/* Header */}
       <header className="shrink-0 sticky top-0 z-10 bg-zinc-950 border-b border-zinc-800 px-4 py-3 flex items-center gap-4">
+        {/* 모바일: 상세 패널 열려있을 때 뒤로가기 버튼 */}
+        {selectedLink && (
+          <button
+            onClick={handleBack}
+            className="md:hidden shrink-0 text-zinc-400 hover:text-zinc-100 transition-colors p-1 -ml-1"
+            aria-label="목록으로 돌아가기"
+          >
+            ←
+          </button>
+        )}
         <span className="text-zinc-100 font-bold text-lg shrink-0">link_memory</span>
         <UrlInputBar onSave={handleSave} />
       </header>
 
-      {/* TagBar */}
-      {!loading && <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />}
+      {/* TagBar — 모바일에서 상세 패널 열리면 숨김 */}
+      {!loading && !selectedLink && (
+        <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />
+      )}
+      {!loading && selectedLink && (
+        <div className="hidden md:block">
+          <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />
+        </div>
+      )}
 
       {/* Body — 2패널 */}
       <div className="flex flex-1 overflow-hidden">
-        {/* 좌: 링크 목록 (40%) */}
-        <div className="w-full md:w-2/5 border-r border-zinc-800 overflow-y-auto p-2 space-y-1">
+        {/* 좌: 링크 목록 — 모바일에서 상세 선택 시 숨김 */}
+        <div className={`border-r border-zinc-800 overflow-y-auto p-2 space-y-1
+          ${selectedLink ? 'hidden md:block md:w-2/5' : 'w-full md:w-2/5'}`}>
           {loading ? (
             Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
           ) : filteredLinks.length === 0 ? (
@@ -179,30 +212,23 @@ export default function Home() {
                 key={link.id}
                 link={link}
                 isSelected={link.id === selectedId}
-                onSelect={setSelectedId}
+                onSelect={handleSelect}
               />
             ))
           )}
         </div>
 
-        {/* 우: 상세 패널 (60%) */}
-        <div className="hidden md:block md:w-3/5 overflow-hidden">
-          {selectedLink ? (
-            <DetailPanel
-              link={selectedLink}
-              allTags={allTags}
-              onMemoSave={handleMemoSave}
-              onSummaryRetry={handleSummaryRetry}
-              onTagAdd={handleTagAdd}
-              onTagRemove={handleTagRemove}
-              onTagCreate={handleTagCreate}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full text-zinc-500 text-sm">
-              링크를 선택하면 상세 내용이 표시됩니다
-            </div>
-          )}
-        </div>
+        {/* 우: 상세 패널 — 모바일에서 전체 화면, 데스크탑에서 60% */}
+        {selectedLink && (
+          <div className="w-full md:w-3/5 overflow-hidden">
+            {detailPanel}
+          </div>
+        )}
+        {!selectedLink && (
+          <div className="hidden md:flex md:w-3/5 items-center justify-center text-zinc-500 text-sm">
+            링크를 선택하면 상세 내용이 표시됩니다
+          </div>
+        )}
       </div>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={hide} />}
