@@ -5,7 +5,7 @@ export interface YouTubeMetadata {
   publishedAt: string | null
 }
 
-function extractYouTubeId(url: string): string | null {
+export function extractYouTubeId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?/\s]{11})/,
   ]
@@ -23,6 +23,24 @@ async function fetchOEmbed(url: string): Promise<{ title: string; thumbnail_url:
     )
     if (!res.ok) return null
     return res.json()
+  } catch {
+    return null
+  }
+}
+
+export async function fetchVideoDescription(videoId: string): Promise<string | null> {
+  const key = process.env.YOUTUBE_DATA_API_KEY
+  if (!key) return null
+
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&part=snippet&key=${key}`
+    )
+    if (!res.ok) return null
+    const data = await res.json() as { items?: { snippet?: { description?: string } }[] }
+    const description = data.items?.[0]?.snippet?.description ?? null
+    // 설명이 너무 짧으면 의미 없음
+    return description && description.length > 100 ? description : null
   } catch {
     return null
   }
