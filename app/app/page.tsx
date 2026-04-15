@@ -33,16 +33,7 @@ export default function Home() {
     const res = await fetch(url)
     if (!res.ok) return
     const { links: data } = await res.json() as { links: Link[] }
-    setLinks(
-      data.map((l) => ({
-        ...l,
-        thumbnailUrl: l.thumbnailUrl ?? null,
-        channelName: l.channelName ?? null,
-        publishedAt: l.publishedAt ?? null,
-        aiSummary: l.aiSummary ?? null,
-        tags: l.tags ?? [],
-      }))
-    )
+    setLinks(data)
   }, [selectedTagId])
 
   useEffect(() => {
