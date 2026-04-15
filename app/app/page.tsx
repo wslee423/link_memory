@@ -27,14 +27,13 @@ export default function Home() {
     setAllTags(tags)
   }, [])
 
-  // 링크 목록 조회
+  // 링크 목록 조회 (전체, 필터링은 클라이언트에서)
   const fetchLinks = useCallback(async () => {
-    const url = selectedTagId ? `/api/links?tagId=${selectedTagId}` : '/api/links'
-    const res = await fetch(url)
+    const res = await fetch('/api/links')
     if (!res.ok) return
     const { links: data } = await res.json() as { links: Link[] }
     setLinks(data)
-  }, [selectedTagId])
+  }, [])
 
   useEffect(() => {
     const load = async () => {

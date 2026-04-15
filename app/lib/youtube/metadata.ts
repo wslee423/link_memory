@@ -45,12 +45,42 @@ async function fetchDataAPI(videoId: string): Promise<{ publishedAt: string | nu
   }
 }
 
+// 일반 웹 URL: OGP 태그에서 제목/썸네일 추출
+async function fetchOGP(url: string): Promise<{ title: string; thumbnailUrl: string | null }> {
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; link_memory-bot/1.0)' },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (!res.ok) return { title: url, thumbnailUrl: null }
+
+    const html = await res.text()
+
+    const ogTitle =
+      html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)?.[1] ??
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i)?.[1]
+
+    const ogImage =
+      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)?.[1] ??
+      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)?.[1]
+
+    const titleTag = html.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim()
+
+    return {
+      title: ogTitle ?? titleTag ?? url,
+      thumbnailUrl: ogImage ?? null,
+    }
+  } catch {
+    return { title: url, thumbnailUrl: null }
+  }
+}
+
 export async function fetchYouTubeMetadata(url: string): Promise<YouTubeMetadata> {
   const videoId = extractYouTubeId(url)
 
   if (!videoId) {
-    // 비유튜브: OGP fallback
-    return { title: url, thumbnailUrl: null, channelName: null, publishedAt: null }
+    const ogp = await fetchOGP(url)
+    return { ...ogp, channelName: null, publishedAt: null }
   }
 
   const [oembed, dataApi] = await Promise.all([
