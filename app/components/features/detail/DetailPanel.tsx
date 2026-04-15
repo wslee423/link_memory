@@ -3,15 +3,28 @@
 import Image from 'next/image'
 import { AiSummary } from './AiSummary'
 import { MemoEditor } from './MemoEditor'
-import type { Link } from '@/types'
+import { TagInput } from '@/components/features/tags/TagInput'
+import type { Link, Tag } from '@/types'
 
 interface DetailPanelProps {
   link: Link
+  allTags: Tag[]
   onMemoSave: (linkId: string, memo: string) => Promise<void>
   onSummaryRetry: (linkId: string) => void
+  onTagAdd: (linkId: string, tag: Tag) => Promise<void>
+  onTagRemove: (linkId: string, tagId: string) => Promise<void>
+  onTagCreate: (linkId: string, name: string) => Promise<void>
 }
 
-export function DetailPanel({ link, onMemoSave, onSummaryRetry }: DetailPanelProps) {
+export function DetailPanel({
+  link,
+  allTags,
+  onMemoSave,
+  onSummaryRetry,
+  onTagAdd,
+  onTagRemove,
+  onTagCreate,
+}: DetailPanelProps) {
   return (
     <div className="h-full overflow-y-auto p-4 space-y-4">
       {/* 썸네일 */}
@@ -65,6 +78,21 @@ export function DetailPanel({ link, onMemoSave, onSummaryRetry }: DetailPanelPro
             onSave={onMemoSave}
           />
         </div>
+      </div>
+
+      <hr className="border-zinc-700" />
+
+      {/* 태그 */}
+      <div className="space-y-1">
+        <p className="text-zinc-400 text-xs font-medium uppercase tracking-wide">태그</p>
+        <TagInput
+          key={link.id}
+          allTags={allTags}
+          selectedTags={link.tags}
+          onAdd={(tag) => onTagAdd(link.id, tag)}
+          onRemove={(tagId) => onTagRemove(link.id, tagId)}
+          onCreateAndAdd={(name) => onTagCreate(link.id, name)}
+        />
       </div>
     </div>
   )
