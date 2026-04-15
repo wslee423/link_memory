@@ -39,16 +39,20 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body: UpdateLinkRequest = await request.json()
-  const { memo, tagIds } = body
+  const { memo, tagIds, isArchived } = body
 
-  // 메모 수정
-  if (memo !== undefined) {
-    if (memo.length > 5000) {
+  // 메모 또는 보관 상태 수정
+  if (memo !== undefined || isArchived !== undefined) {
+    if (memo !== undefined && memo.length > 5000) {
       return NextResponse.json({ error: '메모는 5000자 이하여야 합니다.' }, { status: 400 })
     }
+    const patch: Record<string, unknown> = {}
+    if (memo !== undefined) patch.memo = memo
+    if (isArchived !== undefined) patch.is_archived = isArchived
+
     const { error } = await supabase
       .from('links')
-      .update({ memo })
+      .update(patch)
       .eq('id', id)
       .eq('user_id', user.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

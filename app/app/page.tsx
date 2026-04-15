@@ -16,6 +16,7 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
   const [loading, setLoading] = useState(true)
   const { toast, show, hide } = useToast()
 
@@ -34,13 +35,14 @@ export default function Home() {
     setAllTags(tags)
   }, [])
 
-  // 전체 링크 조회 — 필터는 클라이언트에서
+  // 링크 조회 — 보관함/일반 구분, 나머지 필터는 클라이언트에서
   const fetchLinks = useCallback(async () => {
-    const res = await fetch('/api/links')
+    const url = showArchived ? '/api/links?archived=true' : '/api/links'
+    const res = await fetch(url)
     if (!res.ok) return
     const { links: data } = await res.json() as { links: Link[] }
     setLinks(data)
-  }, [])
+  }, [showArchived])
 
   useEffect(() => {
     const load = async () => {
@@ -91,6 +93,18 @@ export default function Home() {
   async function handleSummaryRetry(linkId: string) {
     await fetch(`/api/links/${linkId}/summarize`, { method: 'POST' })
     await fetchLinks()
+  }
+
+  async function handleArchive(linkId: string, archive: boolean) {
+    const res = await fetch(`/api/links/${linkId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isArchived: archive }),
+    })
+    if (!res.ok) { show(archive ? '보관 실패' : '복원 실패', 'error'); return }
+    // 목록에서 제거 (보관함↔일반 전환)
+    setLinks((prev) => prev.filter((l) => l.id !== linkId))
+    setSelectedId(null)
   }
 
   async function handleDelete(linkId: string) {
@@ -157,10 +171,21 @@ export default function Home() {
         <UrlInputBar onSave={handleSave} />
       </header>
 
-      {/* TagBar: 모바일에서 상세 패널 열리면 숨김 */}
+      {/* TagBar + 보관함 토글 */}
       {!loading && (
-        <div className={selectedLink ? 'hidden md:block' : ''}>
-          <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />
+        <div className={`flex items-center gap-2 pr-2 ${selectedLink ? 'hidden md:flex' : ''}`}>
+          <div className="flex-1">
+            <TagBar tags={allTags} selectedTagId={selectedTagId} onSelect={setSelectedTagId} />
+          </div>
+          <button
+            onClick={() => { setShowArchived((v) => !v); setSelectedId(null); setSearchQuery('') }}
+            className={`shrink-0 text-xs px-3 py-1 rounded-full border transition-colors whitespace-nowrap
+              ${showArchived
+                ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
+                : 'border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500'}`}
+          >
+            {showArchived ? '← 일반 목록' : '보관함'}
+          </button>
         </div>
       )}
 
@@ -208,6 +233,7 @@ export default function Home() {
               onTagAdd={handleTagAdd}
               onTagRemove={handleTagRemove}
               onTagCreate={handleTagCreate}
+              onArchive={handleArchive}
               onDelete={handleDelete}
             />
           ) : (

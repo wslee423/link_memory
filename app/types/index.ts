@@ -10,6 +10,7 @@ export interface Link {
   memo: string
   tags: Tag[]
   createdAt: string
+  isArchived: boolean
 }
 
 export interface AiSummary {
@@ -31,6 +32,7 @@ export interface CreateLinkRequest {
 export interface UpdateLinkRequest {
   memo?: string
   tagIds?: string[]
+  isArchived?: boolean
 }
 
 export interface CreateTagRequest {

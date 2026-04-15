@@ -15,6 +15,7 @@ interface DetailPanelProps {
   onTagAdd: (linkId: string, tag: Tag) => Promise<void>
   onTagRemove: (linkId: string, tagId: string) => Promise<void>
   onTagCreate: (linkId: string, name: string) => Promise<void>
+  onArchive: (linkId: string, archive: boolean) => Promise<void>
   onDelete: (linkId: string) => Promise<void>
 }
 
@@ -26,6 +27,7 @@ export function DetailPanel({
   onTagAdd,
   onTagRemove,
   onTagCreate,
+  onArchive,
   onDelete,
 }: DetailPanelProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -71,8 +73,14 @@ export function DetailPanel({
           )}
         </div>
 
-        {/* 삭제 버튼 */}
-        <div className="shrink-0">
+        {/* 보관 + 삭제 버튼 */}
+        <div className="shrink-0 flex items-center gap-3">
+          <button
+            onClick={() => onArchive(link.id, !link.isArchived)}
+            className="text-zinc-600 hover:text-zinc-300 text-xs transition-colors"
+          >
+            {link.isArchived ? '복원' : '보관'}
+          </button>
           {confirmDelete ? (
             <div className="flex items-center gap-2">
               <span className="text-zinc-400 text-xs">삭제할까요?</span>
