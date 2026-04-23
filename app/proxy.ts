@@ -25,8 +25,17 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 미로그인 상태에서 /login 외 페이지 접근 시 리다이렉트
-  if (!user && !request.nextUrl.pathname.startsWith('/login')) {
+  // 인증 우회 허용 경로 (무한 리다이렉트 방지)
+  // - /login: 로그인 페이지
+  // - /auth/callback: 비밀번호 재설정 이메일 링크의 세션 교환 엔드포인트
+  // - /reset-password: 새 비밀번호 입력 페이지 (재설정 플로우 내 일시적 세션 사용)
+  const pathname = request.nextUrl.pathname
+  const isPublicPath =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/reset-password')
+
+  if (!user && !isPublicPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
