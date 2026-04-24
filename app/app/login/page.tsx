@@ -6,8 +6,11 @@ import { createClient } from '@/lib/supabase/client'
 
 type Mode = 'login' | 'reset'
 
-const INVALID_TOKEN_MESSAGE =
-  '재설정 링크가 만료되었거나 유효하지 않습니다. 다시 요청해주세요.'
+const ERROR_MESSAGES: Record<string, string> = {
+  'invalid-token':  '재설정 링크가 유효하지 않습니다. 아래에서 새 링크를 요청하세요.',
+  'otp_expired':    '재설정 링크가 만료되었거나 이미 사용되었습니다. 아래에서 새 링크를 요청하세요.',
+  'exchange-failed':'링크 처리 중 오류가 발생했습니다. 아래에서 새 링크를 요청하세요.',
+}
 
 export default function LoginPage() {
   return (
@@ -31,20 +34,22 @@ function LoginFallback() {
 }
 
 function LoginPageContent() {
-  const [mode, setMode] = useState<Mode>('login')
+  const searchParams = useSearchParams()
+  const urlError = searchParams.get('error')
+  const isResetError = urlError !== null
+
+  const [mode, setMode] = useState<Mode>(isResetError ? 'reset' : 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resetNotice, setResetNotice] = useState<string | null>(null)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
 
   // URL 쿼리의 error 플래그는 렌더 중 파생값으로 표시 (useEffect+setState 금지)
-  const tokenError =
-    searchParams.get('error') === 'invalid-token' ? INVALID_TOKEN_MESSAGE : null
-  const displayError = error ?? tokenError
+  const urlErrorMessage = urlError ? (ERROR_MESSAGES[urlError] ?? ERROR_MESSAGES['invalid-token']) : null
+  const displayError = error ?? urlErrorMessage
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()

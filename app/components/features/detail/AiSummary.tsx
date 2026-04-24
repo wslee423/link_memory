@@ -16,24 +16,20 @@ interface AiSummaryProps {
 const FAILURE_THRESHOLD_MS = 90_000
 
 export function AiSummary({ summary, summaryError, linkId, createdAt, onRetry }: AiSummaryProps) {
-  const [timedOut, setTimedOut] = useState(() =>
-    Date.now() - new Date(createdAt).getTime() > FAILURE_THRESHOLD_MS
-  )
+  // linkId 기준으로 timedOut을 추적 — linkId 변경 시 자동 false (파생값)
+  const [timedOutId, setTimedOutId] = useState<string | null>(() => {
+    const elapsed = Date.now() - new Date(createdAt).getTime()
+    return elapsed > FAILURE_THRESHOLD_MS ? linkId : null
+  })
+  const timedOut = timedOutId === linkId
 
   useEffect(() => {
-    // summary/error 상태가 바뀌거나 링크가 바뀔 때 타이머 리셋
-    if (summary || summaryError) {
-      setTimedOut(false)
-      return
-    }
+    if (summary || summaryError) return
 
     const elapsed = Date.now() - new Date(createdAt).getTime()
-    if (elapsed > FAILURE_THRESHOLD_MS) {
-      setTimedOut(true)
-      return
-    }
-
-    const t = setTimeout(() => setTimedOut(true), FAILURE_THRESHOLD_MS - elapsed)
+    const remaining = FAILURE_THRESHOLD_MS - elapsed
+    // setTimeout(0)으로 effect 내 동기 setState 회피 (이미 만료된 경우 포함)
+    const t = setTimeout(() => setTimedOutId(linkId), Math.max(0, remaining))
     return () => clearTimeout(t)
   }, [summary, summaryError, linkId, createdAt])
 

@@ -32,7 +32,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isPublicPath =
     pathname.startsWith('/login') ||
-    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/auth/') ||
     pathname.startsWith('/reset-password')
 
   if (!user && !isPublicPath) {

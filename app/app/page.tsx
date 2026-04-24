@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { UrlInputBar } from '@/components/features/links/UrlInputBar'
 import { LinkCard } from '@/components/features/links/LinkCard'
 import { SearchBar } from '@/components/features/links/SearchBar'
@@ -19,6 +21,12 @@ export default function Home() {
   const [showArchived, setShowArchived] = useState(false)
   const [loading, setLoading] = useState(true)
   const { toast, show, hide } = useToast()
+  const router = useRouter()
+
+  async function handleSignOut() {
+    await createClient().auth.signOut()
+    router.push('/login')
+  }
 
   const selectedLink = links.find((l) => l.id === selectedId) ?? null
   const filteredLinks = links.filter((l) => {
@@ -201,6 +209,12 @@ export default function Home() {
         )}
         <span className="text-zinc-100 font-bold text-lg shrink-0">link_memory</span>
         <UrlInputBar onSave={handleSave} />
+        <button
+          onClick={handleSignOut}
+          className="shrink-0 text-xs text-zinc-500 hover:text-zinc-300 transition-colors whitespace-nowrap"
+        >
+          로그아웃
+        </button>
       </header>
 
       {/* TagBar + 보관함 토글 */}

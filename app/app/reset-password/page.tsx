@@ -37,12 +37,8 @@ export default function ResetPasswordPage() {
 
     setSuccess(true)
     setLoading(false)
-    // 변경된 세션으로 유지되는 것을 방지하기 위해 로그아웃 후 로그인 페이지로
     await supabase.auth.signOut()
-    setTimeout(() => {
-      router.push('/login')
-      router.refresh()
-    }, 1500)
+    setTimeout(() => router.push('/login'), 1500)
   }
 
   return (
