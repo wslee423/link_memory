@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchYouTubeMetadata } from '@/lib/youtube/metadata'
 import { fetchTranscript } from '@/lib/youtube/transcript'
@@ -113,10 +113,14 @@ export async function POST(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  fetch(`${request.nextUrl.origin}/api/links/${link.id}/summarize`, {
-    method: 'POST',
-    headers: { cookie: request.headers.get('cookie') ?? '' },
-  }).catch(() => {})
+  const summarizeUrl = `${request.nextUrl.origin}/api/links/${link.id}/summarize`
+  const summarizeCookie = request.headers.get('cookie') ?? ''
+  after(async () => {
+    await fetch(summarizeUrl, {
+      method: 'POST',
+      headers: { cookie: summarizeCookie },
+    }).catch(() => {})
+  })
 
   return NextResponse.json({
     link: {
