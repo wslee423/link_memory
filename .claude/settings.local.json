@@ -3,7 +3,20 @@
     "allow": [
       "Bash(git init:*)",
       "Bash(git config:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(git commit -m 'style: thumbnail width 50% \\(w-1/2\\):*)",
+      "Bash(git push:*)",
+      "Bash(node:*)",
+      "Bash(rm D:/wlabs/link_memory/app/scripts/reset-password.mjs)",
+      "Bash(rmdir D:/wlabs/link_memory/app/scripts)",
+      "Bash(npx eslint *)",
+      "Bash(cat next.config.ts)",
+      "Bash(cat next.config.js)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)"
     ]
   }
 }
